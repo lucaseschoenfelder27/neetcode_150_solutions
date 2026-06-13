@@ -1,18 +1,47 @@
+class Node:
+    def __init__(self, key, val):
+        self.key, self.val = key, val
+        self.prev = self.next = None
+        pass
+
 class LRUCache:
     # Time: O(?)
     # Space: O(?)
     def __init__(self, capacity: int) -> None:
         # TODO: Initialize LRU cache
-        pass
+        self.capacity = capacity
+        self.cache = {}
+        
+        self.left, self.right = Node(0,0), Node(0,0)
+        self.left.next, self.right.prev = self.right, self.left
+
+    def remove(self, node):
+        prev, nxt  = node.prev, node.next
+        prev.next, nxt.prev = nxt, prev
+
+    def insert(self, node):
+        prev, nxt  = self.right.prev, self.right
+        prev.next = nxt.prev = node
+        node.next, node.prev = nxt, prev
 
     # Time: O(?)
     # Space: O(?)
     def get(self, key: int) -> int:
-        # TODO: Implement get
+        if key in self.cache:
+            self.remove(self.cache[key])
+            self.insert(self.cache[key])
+            return self.cache[key].val
         return -1
 
     # Time: O(?)
     # Space: O(?)
     def put(self, key: int, value: int) -> None:
-        # TODO: Implement put
-        pass
+        if key in self.cache:
+            self.remove(self.cache[key])
+        self.cache[key] = Node(key, value)
+        self.insert(self.cache[key])
+        
+        if len(self.cache) > self.capacity:
+            lru = self.left.next
+            self.remove(lru)
+            del self.cache[lru.key]
