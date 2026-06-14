@@ -2,8 +2,10 @@ from collections import deque
 import random
 import msvcrt
 import os
+import time
 
 def get_direction():
+    
     if not msvcrt.kbhit():
         return None
     
@@ -31,8 +33,29 @@ class SnakeGame():
         start = (self.height // 2, self.width // 2)
         self.snake = deque([start])
         self.snake_set = {(start)}
+        self.direction = "R"      # initial direction
+        self.move_delay = 0.4     # seconds between moves
+        self.min_delay = 0.08
+        self.input_buffer = deque(maxlen=2)
         self.spawn_food()
         self.print_board()
+
+    def set_direction(self, new_direction):
+        OPPOSITE = {
+            "U": "D",
+            "D": "U",
+            "L": "R",
+            "R": "L"
+        }
+
+        if not new_direction:
+            return
+
+        if len(self.snake) > 1:
+            if OPPOSITE[new_direction] == self.direction:
+                return
+
+        self.direction = new_direction
     
     def spawn_food(self):
         empty_cells = []
@@ -71,6 +94,10 @@ class SnakeGame():
             self.score += 1
             #self.food_index += 1
             self.spawn_food()
+            self.move_delay = max(
+                self.min_delay,
+                self.move_delay * 0.95
+            )
             #if self.food_index == len(self.food):
             #    print("You Win!")
             #    return -1
@@ -126,16 +153,37 @@ game = SnakeGame(10, 10, [[1,2],[0,1]])
 game.print_board()
 moves = ["R", "D", "R", "U", "L", "U"]
 
+last_move_time = time.time()
 score = 0
 try:
     while True:
-        direction = get_direction()
+        #direction = get_direction()
+        new_direction = get_direction()
+        
+        if new_direction:
+            game.input_buffer.append(new_direction)
+            #game.set_direction(new_direction)
 
-        if direction:
-            score = game.move(direction)
+        now = time.time()
+        
+        if now - last_move_time >= game.move_delay:
+
+            if game.input_buffer:
+                game.set_direction(game.input_buffer.popleft())
+            score = game.move(game.direction)
 
             if score == -1:
-             break
+                break
+
+            last_move_time = now
+
+        time.sleep(0.01)
+        
+        #if direction:
+        #    score = game.move(direction)
+
+        #    if score == -1:
+        #     break
 except KeyboardInterrupt:
     print("\nGame terminated.")
                 
